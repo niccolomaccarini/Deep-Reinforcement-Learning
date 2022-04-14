@@ -10,9 +10,6 @@ gamma = 0.995
 num_actions = 2
 state_shape = 4
 policy = 'egreedy'
-experience_replay = True
-decay_epsilon = True #This is to perform dynamic epsilon-greedy exploration by decaying the value of epsilon 
-#with time
 
 epsilon = 1  # Epsilon greedy parameter
 epsilon_min = 0.01
