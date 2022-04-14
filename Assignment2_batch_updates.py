@@ -130,7 +130,9 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
                 experience_replay_update(batch_size, len_history, state_history, state_next_history, 
                                          rewards_history,
                                          action_history, done_history, model)
-
+            if not experience_replay:
+                    weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
+                    
             # Limit the state and reward history
             if len(rewards_history) > max_memory_length:
                 del rewards_history[:1]
@@ -143,7 +145,6 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             if done:
                 print("Run:" + str(run) + ", Steps:" + str(n_steps) + ", Epsilon:" + str(epsilon))
                 if not experience_replay:
-                    weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
                     action_history = []
                     state_history = []
                     state_next_history = []
