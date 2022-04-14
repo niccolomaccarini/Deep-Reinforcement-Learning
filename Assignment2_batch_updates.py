@@ -42,8 +42,7 @@ def select_action(state, policy, epsilon, model):
                 action = np.argmax(action_probs)
     return action
 
-def weights_update(len_history, state_history,state_next_history,
-                             rewards_history, action_history, done_history, model):
+def weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model):
     #Update the weights using all visited positions 
     y_train = model.predict(state_history)
     for i in range(len(done_history)):
@@ -144,7 +143,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             if done:
                 print("Run:" + str(run) + ", Steps:" + str(n_steps) + ", Epsilon:" + str(epsilon))
                 if not experience_replay:
-                    weights_update(len_history, state_history,state_next_history, rewards_history, action_history, done_history, model)
+                    weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
                     action_history = []
                     state_history = []
                     state_next_history = []
