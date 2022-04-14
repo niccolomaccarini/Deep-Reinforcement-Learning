@@ -44,14 +44,14 @@ def select_action(state, policy, epsilon, model):
 
 def weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model):
     #Update the weights using all visited positions 
-    y_train = model.predict(state_history)
+    y_train = model.predict(np.array(state_history))
     for i in range(len(done_history)):
         if not done_history[i]:
             y_train[i][action_history[i]] = rewards_history[i] + gamma*np.max(model.predict(np.array([state_next_history[i],])))
         else:
             y_train[i][action_history[i]] = rewards_history[i]
     #Train the model
-    model.fit(state_history, y_train, verbose = 0)   
+    model.fit(np.array(state_history), y_train, verbose = 0)   
     
 def experience_replay_update(batch_size, len_history, state_history,state_next_history,
                              rewards_history, action_history, done_history, model):
