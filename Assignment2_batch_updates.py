@@ -16,8 +16,8 @@ decay_epsilon = True #This is to perform dynamic epsilon-greedy exploration by d
 
 epsilon = 1  # Epsilon greedy parameter
 epsilon_min = 0.01
-decay_rate = 0.9995
-batch_size = 20  # Size of batch taken from replay buffer
+decay_rate = 0.95
+batch_size = 64  # Size of batch taken from replay buffer
 
 game = CartPoleEnv()
 
@@ -26,7 +26,7 @@ def build_architecture(learning_rate = 0.001):
     inputs = keras.Input(shape=(4,))
     x = layers.Dense(24, activation = 'relu')(inputs)   #Tried with 100 nodes also, but apparently there's no improvement
     x = layers.Dense(24, activation = 'relu')(x)
-    x = layers.Dense(24, activation = 'relu')(x) #Let's see what happens when removing a layer
+    #x = layers.Dense(24, activation = 'relu')(x) #Let's see what happens when removing a layer
     outputs = layers.Dense(2, activation = 'linear')(x)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
@@ -40,7 +40,7 @@ def select_action(state, policy, epsilon, model):
                 action = random.randrange(game.action_space.n)
             else:
                 # Predict action Q-values from environment state
-                action_probs = model.predict(state)
+                action_probs = model.predict(np.array([state,]))
                 # Take best action
                 action = np.argmax(action_probs)
     return action
@@ -60,14 +60,14 @@ def experience_replay_update(batch_size, len_history, state_history,state_next_h
     # Build the updated Q-values for the sampled future states
     # Q value = reward + discount factor * expected future reward
             
-    for i in range(batch_size):
-        y_train = model.predict(state_sample[i])
+    y_train = model.predict(state_sample)
+    for i in range(len(done_sample)):
         if not done_sample[i]:
-            y_train[0][action_sample[i]] = rewards_sample[i] + gamma*np.max(model.predict(state_next_sample[i]))
+            y_train[i][action_sample[i]] = rewards_sample[i] + gamma*np.max(model.predict(np.array([state_next_sample[i],])))
         else:
-            y_train[0][action_sample[i]] = rewards_sample[i]
-        #Train the model
-        model.fit(state_sample[i], y_train, verbose = 0)
+            y_train[i][action_sample[i]] = rewards_sample[i]
+    #Train the model
+    model.fit(state_sample, y_train, verbose = 0)
 
 def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, batch_size, decay_epsilon):
     
@@ -88,7 +88,8 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
 
     for i in range(n_runs):  # Run until solved
         state = game.reset()
-        state = np.reshape(state, [1,state_shape])
+        #state = np.reshape(state, [1,state_shape])
+        #state = np.array([state,])
         episode_reward = 0
         run += 1
         n_steps = 0
@@ -97,11 +98,11 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             #game.render() #Adding this line would show the attempts of the agent in a pop up window.
             n_steps +=1
             #Select an action according to the policy
-            action = select_action(state, policy, epsilon,model)
+            action = select_action(state, policy, epsilon, model)
 
             # Apply the sampled action in our environment
             state_next, reward, done, _ = game.step(action)
-            state_next = np.reshape(state_next, [1,state_shape])
+            #state_next = np.reshape(state_next, [1,state_shape])
 
             episode_reward += reward
 
