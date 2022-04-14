@@ -45,6 +45,18 @@ def select_action(state, policy, epsilon, model):
                 action = np.argmax(action_probs)
     return action
 
+def weights_update(len_history, state_history,state_next_history,
+                             rewards_history, action_history, done_history, model):
+    #Update the weights using all visited positions 
+    y_train = model.predict(state_history)
+    for i in range(len(done_history)):
+        if not done_history[i]:
+            y_train[i][action_history[i]] = rewards_history[i] + gamma*np.max(model.predict(np.array([state_next_history[i],])))
+        else:
+            y_train[i][action_history[i]] = rewards_history[i]
+    #Train the model
+    model.fit(state_history, y_train, verbose = 0)   
+    
 def experience_replay_update(batch_size, len_history, state_history,state_next_history,
                              rewards_history, action_history, done_history, model):
     # Get indices of samples for replay buffers
@@ -73,7 +85,8 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
     
     model = build_architecture(learning_rate)
     
-    ###Experience replay buffers###
+    ###Experience replay buffers, if we won't use experience replay these lists will remain useful to store the visited states of each 
+    #episode###
     action_history = []
     state_history = []
     state_next_history = []
@@ -83,8 +96,9 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
     running_reward = 0
     # Maximum replay length
     max_memory_length = 1000000
-    # Train the model after a fixed number of actions
     run = 0
+    max_run_length = 500
+
 
     for i in range(n_runs):  # Run until solved
         state = game.reset()
@@ -94,7 +108,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
         run += 1
         n_steps = 0
     
-        while True:
+        for j in range(max_run_length):
             #game.render() #Adding this line would show the attempts of the agent in a pop up window.
             n_steps +=1
             #Select an action according to the policy
@@ -132,8 +146,16 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             # If done print the score of current run
             if done:
                 print("Run:" + str(run) + ", Steps:" + str(n_steps) + ", Epsilon:" + str(epsilon))
+                if not experience_replay:
+                    weights_update(len_history, state_history,state_next_history, rewards_history, action_history, done_history, model)
+                    action_history = []
+                    state_history = []
+                    state_next_history = []
+                    rewards_history = []
+                    done_history = []
+                    episode_reward_history = []
                 break
-
+        
         # Update running reward to check condition for solving
         episode_reward_history.append(episode_reward)
         
