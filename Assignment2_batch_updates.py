@@ -20,11 +20,13 @@ game = CartPoleEnv()
 
 ###BUILD THE ARCHITECTURE OF THE MODEL###
 def build_architecture(learning_rate = 0.001):
+    init = tf.keras.initializers.HeUniform()
     inputs = keras.Input(shape=(4,))
-    x = layers.Dense(24, activation = 'relu')(inputs)   #Tried with 100 nodes also, but apparently there's no improvement
-    x = layers.Dense(24, activation = 'relu')(x)
+    x = layers.Dense(24, activation = 'relu', kernel_initializer = init)(inputs)   #Tried with 100 nodes also, but apparently there's no
+    #improvement
+    x = layers.Dense(24, activation = 'relu', kernel_initializer = init)(x)
     #x = layers.Dense(24, activation = 'relu')(x) #Let's see what happens when removing a layer
-    outputs = layers.Dense(2, activation = 'linear')(x)
+    outputs = layers.Dense(2, activation = 'linear', kernel_initializer = init)(x)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
     optimizer = keras.optimizers.Adam(learning_rate)
@@ -45,9 +47,10 @@ def select_action(state, policy, epsilon, model):
 def weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model):
     #Update the weights using all visited positions 
     y_train = model.predict(np.array(state_history))
+    q_updates = np.ndarray.max(model.predict(state_next_history), axis = -1)
     for i in range(len(done_history)):
         if not done_history[i]:
-            y_train[i][action_history[i]] = rewards_history[i] + gamma*np.max(model.predict(np.array([state_next_history[i],])))
+            y_train[i][action_history[i]] = rewards_history[i] + gamma*q_updates[i]
         else:
             y_train[i][action_history[i]] = rewards_history[i]
     #Train the model
@@ -69,9 +72,10 @@ def experience_replay_update(batch_size, len_history, state_history,state_next_h
     # Q value = reward + discount factor * expected future reward
             
     y_train = model.predict(state_sample)
+    q_updates = np.ndarray.max(model.predict(state_next_sample), axis = -1)
     for i in range(len(done_sample)):
         if not done_sample[i]:
-            y_train[i][action_sample[i]] = rewards_sample[i] + gamma*np.max(model.predict(np.array([state_next_sample[i],])))
+            y_train[i][action_sample[i]] = rewards_sample[i] + gamma*q_updates[i]
         else:
             y_train[i][action_sample[i]] = rewards_sample[i]
     #Train the model
@@ -94,6 +98,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
     max_memory_length = 1000000
     run = 0
     max_run_length = 500
+    update_every_n = 4
 
 
     for i in range(n_runs):  # Run until solved
@@ -125,7 +130,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             state = state_next
 
             # Update every fixed number of frames and once batch size is reached
-            if len(done_history) > batch_size and not done and experience_replay:
+            if len(done_history) > batch_size and not done and experience_replay and run % update_every_n == 0:
                 len_history = len(done_history)
                 experience_replay_update(batch_size, len_history, state_history, state_next_history, 
                                          rewards_history,
@@ -144,7 +149,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             # If done print the score of current run
             if done:
                 print("Run:" + str(run) + ", Steps:" + str(n_steps) + ", Epsilon:" + str(epsilon))
-                if not experience_replay:
+                if not experience_replay and run % update_every_n == 0:
                     action_history = []
                     state_history = []
                     state_next_history = []
