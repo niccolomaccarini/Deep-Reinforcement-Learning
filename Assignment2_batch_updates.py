@@ -47,7 +47,7 @@ def select_action(state, policy, epsilon, model):
 def weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model):
     #Update the weights using all visited positions 
     y_train = model.predict(np.array(state_history))
-    q_updates = np.ndarray.max(model.predict(state_next_history), axis = -1)
+    q_updates = np.ndarray.max(model.predict(np.array(state_next_history)), axis = -1)
     for i in range(len(done_history)):
         if not done_history[i]:
             y_train[i][action_history[i]] = rewards_history[i] + gamma*q_updates[i]
@@ -135,7 +135,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
                 experience_replay_update(batch_size, len_history, state_history, state_next_history, 
                                          rewards_history,
                                          action_history, done_history, model)
-            if not experience_replay and update_every_n % run == 0:
+            if not experience_replay:
                     weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
                     
             # Limit the state and reward history
@@ -149,7 +149,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
             # If done print the score of current run
             if done:
                 print("Run:" + str(run) + ", Steps:" + str(n_steps) + ", Epsilon:" + str(epsilon))
-                if not experience_replay and run % update_every_n == 0:
+                if not experience_replay:
                     action_history = []
                     state_history = []
                     state_next_history = []
