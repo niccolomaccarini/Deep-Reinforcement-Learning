@@ -135,7 +135,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
                 experience_replay_update(batch_size, len_history, state_history, state_next_history, 
                                          rewards_history,
                                          action_history, done_history, model)
-            if not experience_replay:
+            if not experience_replay and update_every_n % run == 0:
                     weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
                     
             # Limit the state and reward history
