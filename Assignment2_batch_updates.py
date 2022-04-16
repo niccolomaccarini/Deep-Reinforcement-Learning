@@ -44,6 +44,15 @@ def select_action(state, policy, epsilon, model):
                 action = np.argmax(action_probs)
     return action
 
+def weights_update_single(state_history,state_next_history, rewards_history, action_history, done_history, model):
+    y = model.predict(np.array([state_history[-1],]))
+    q_updates = np.ndarray.max(model.predict(np.array([state_next_history[-1],])))
+    if not done_history[-1]:
+        y[0][action_history[-1]] = rewards_history[-1] + gamma*q_updates
+    else:
+        y[0][action_history[-1]] = rewards_history[-1]
+    model.fit(np.array([state_history[-1],]), y, verbose = 0) 
+        
 def weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model):
     #Update the weights using all visited positions 
     y_train = model.predict(np.array(state_history))
@@ -136,7 +145,7 @@ def cartpole(n_runs, learning_rate, gamma, policy, epsilon, experience_replay, b
                                          rewards_history,
                                          action_history, done_history, model)
             if not experience_replay:
-                    weights_update(state_history,state_next_history, rewards_history, action_history, done_history, model)
+                    weights_update_single(state_history,state_next_history, rewards_history, action_history, done_history, model)
                     
             # Limit the state and reward history
             if len(rewards_history) > max_memory_length:
