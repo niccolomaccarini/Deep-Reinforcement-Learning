@@ -25,7 +25,7 @@ def build_architecture(learning_rate = 0.001):
     x = layers.Dense(24, activation = 'relu', kernel_initializer = init)(inputs)   #Tried with 100 nodes also, but apparently there's no
     #improvement
     x = layers.Dense(24, activation = 'relu', kernel_initializer = init)(x)
-    #x = layers.Dense(24, activation = 'relu')(x) #Let's see what happens when removing a layer
+    x = layers.Dense(24, activation = 'relu')(x) #Let's see what happens when removing a layer
     outputs = layers.Dense(2, activation = 'linear', kernel_initializer = init)(x)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
